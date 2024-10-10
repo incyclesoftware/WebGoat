@@ -17,25 +17,24 @@ jobs:
             const alerts = await github.request('GET /repos/{owner}/{repo}/code-scanning/alerts', {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              per_page: 100  // Adjust based on repo size
+              per_page: 100
             });
 
+            // Filter for OWASP-related alerts
             let owaspRelatedAlerts = alerts.data.filter(alert =>
+              // Check for OWASP references in the alert description
+              alert.rule.description.toLowerCase().includes("owasp") ||
+              // Check for common OWASP-related CWE IDs
+              alert.cwe?.id === "CWE-1333" ||  // Regular expression DoS (ReDoS)
+              alert.cwe?.id === "CWE-400"  ||  // Uncontrolled Resource Consumption (CWE-400)
+              alert.cwe?.id === "CWE-730"  ||  // OWASP-related
+              // Additional OWASP Top 10-related keywords
               alert.rule.description.toLowerCase().includes("injection") ||
-              alert.rule.description.toLowerCase().includes("ssrf") ||  // Detecting SSRF
-              alert.rule.description.toLowerCase().includes("broken authentication") ||
-              alert.rule.description.toLowerCase().includes("data exposure") ||
-              alert.rule.description.toLowerCase().includes("xxe") ||
-              alert.rule.description.toLowerCase().includes("access control") ||
-              alert.rule.description.toLowerCase().includes("misconfiguration") ||
+              alert.rule.description.toLowerCase().includes("ssrf") ||
               alert.rule.description.toLowerCase().includes("xss") ||
-              alert.rule.description.toLowerCase().includes("insecure deserialization") ||
-              alert.rule.description.toLowerCase().includes("vulnerable components") ||
-              alert.rule.description.toLowerCase().includes("logging") ||
-              // Detecting OWASP-related CWEs
-              alert.cwe?.id === "CWE-918" || // SSRF
-              alert.cwe?.id === "CWE-79" ||  // XSS
-              alert.cwe?.id === "CWE-89"     // SQL Injection
+              alert.rule.description.toLowerCase().includes("access control") ||
+              alert.rule.description.toLowerCase().includes("authentication") ||
+              alert.rule.description.toLowerCase().includes("misconfiguration")
             );
 
             if (owaspRelatedAlerts.length === 0) {
@@ -44,8 +43,8 @@ jobs:
               console.log(`${owaspRelatedAlerts.length} OWASP-related alerts found.`);
               owaspRelatedAlerts.forEach(alert => {
                 console.log(`Annotating Alert: ${alert.rule.description} (Severity: ${alert.rule.security_severity_level})`);
-
-                // Add annotations to the alert
+                
+                // Annotate or add comment on OWASP-related alerts
                 github.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
