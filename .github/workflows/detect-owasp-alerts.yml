@@ -1,4 +1,4 @@
-name: "Detect OWASP Alerts"
+name: "Generate OWASP Alerts Report"
 
 on:
   workflow_dispatch:  # Allows manual triggering
@@ -20,9 +20,7 @@ jobs:
               per_page: 100
             });
 
-            // Filter for OWASP-related alerts
             let owaspRelatedAlerts = alerts.data.filter(alert =>
-              // Check for OWASP-related CWEs in the tags field
               alert.rule.tags?.includes('external/cwe/cwe-089') || // SQL Injection
               alert.rule.tags?.includes('external/cwe/cwe-352') || // CSRF
               alert.rule.tags?.includes('external/cwe/cwe-1333') || // ReDoS
@@ -36,9 +34,17 @@ jobs:
             if (owaspRelatedAlerts.length === 0) {
               console.log("No OWASP-related alerts found.");
             } else {
-              console.log(`${owaspRelatedAlerts.length} OWASP-related alerts found.`);
+              let report = `# OWASP Alerts Report\n\n`;
               owaspRelatedAlerts.forEach(alert => {
-                console.log(`OWASP Alert Found: ${alert.rule.description}`);
-                console.log(`File: ${alert.most_recent_instance.location.path}, Line: ${alert.most_recent_instance.location.start_line}`);
+                report += `- **Alert:** ${alert.rule.description}\n  **File:** ${alert.most_recent_instance.location.path}\n  **Line:** ${alert.most_recent_instance.location.start_line}\n\n`;
               });
+
+              // Save the report to a Markdown file
+              const fs = require('fs');
+              fs.writeFileSync('owasp-alerts-report.md', report);
             }
+      - name: Commit report
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Add OWASP Alerts Report"
+          file_pattern: owasp-alerts-report.md
