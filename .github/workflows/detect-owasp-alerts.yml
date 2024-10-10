@@ -20,21 +20,17 @@ jobs:
               per_page: 100
             });
 
-            // Filter for OWASP-related alerts
+            // Filter for OWASP-related alerts by searching the help, tags, and description fields
             let owaspRelatedAlerts = alerts.data.filter(alert =>
-              // Check for OWASP references in the alert description
-              alert.rule.description.toLowerCase().includes("owasp") ||
-              // Check for common OWASP-related CWE IDs
-              alert.cwe?.id === "CWE-1333" ||  // Regular expression DoS (ReDoS)
-              alert.cwe?.id === "CWE-400"  ||  // Uncontrolled Resource Consumption (CWE-400)
-              alert.cwe?.id === "CWE-730"  ||  // OWASP-related
-              // Additional OWASP Top 10-related keywords
-              alert.rule.description.toLowerCase().includes("injection") ||
-              alert.rule.description.toLowerCase().includes("ssrf") ||
-              alert.rule.description.toLowerCase().includes("xss") ||
-              alert.rule.description.toLowerCase().includes("access control") ||
-              alert.rule.description.toLowerCase().includes("authentication") ||
-              alert.rule.description.toLowerCase().includes("misconfiguration")
+              // Check for OWASP-related CWEs in the help field or tags
+              alert.rule.tags.includes('external/cwe/cwe-089') || // SQL Injection
+              alert.rule.tags.includes('external/cwe/cwe-352') || // CSRF
+              alert.rule.tags.includes('external/cwe/cwe-1333') || // ReDoS
+              alert.rule.tags.includes('external/cwe/cwe-400') ||  // Uncontrolled Resource Consumption
+              alert.rule.help.toLowerCase().includes("owasp") ||
+              alert.rule.description.toLowerCase().includes("sql injection") ||
+              alert.rule.description.toLowerCase().includes("cross-site request forgery") ||
+              alert.rule.description.toLowerCase().includes("redos")
             );
 
             if (owaspRelatedAlerts.length === 0) {
@@ -44,7 +40,7 @@ jobs:
               owaspRelatedAlerts.forEach(alert => {
                 console.log(`Annotating Alert: ${alert.rule.description} (Severity: ${alert.rule.security_severity_level})`);
                 
-                // Annotate or add comment on OWASP-related alerts
+                // Add annotations to the alert
                 github.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
