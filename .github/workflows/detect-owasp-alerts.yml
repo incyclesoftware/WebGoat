@@ -1,14 +1,13 @@
 name: "Detect and Annotate OWASP Alerts"
 
 on:
-  workflow_dispatch:  # Allows manual triggering of the workflow
+  workflow_dispatch:  # Allows manual triggering
   schedule:
-    - cron: "0 0 * * *"  # Run daily
+    - cron: "0 0 * * *"  # Run daily, adjust based on your needs
 
 jobs:
-  detect-owasp:
+  detect-and-annotate-owasp:
     runs-on: ubuntu-latest
-
     steps:
       - name: Fetch code scanning alerts
         id: fetch_alerts
@@ -18,11 +17,12 @@ jobs:
             const alerts = await github.request('GET /repos/{owner}/{repo}/code-scanning/alerts', {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              per_page: 100  // Fetch up to 100 alerts per page
+              per_page: 100  // Adjust based on repo size
             });
-            
+
             let owaspRelatedAlerts = alerts.data.filter(alert =>
               alert.rule.description.toLowerCase().includes("injection") ||
+              alert.rule.description.toLowerCase().includes("ssrf") ||  // Detecting SSRF
               alert.rule.description.toLowerCase().includes("broken authentication") ||
               alert.rule.description.toLowerCase().includes("data exposure") ||
               alert.rule.description.toLowerCase().includes("xxe") ||
@@ -31,7 +31,11 @@ jobs:
               alert.rule.description.toLowerCase().includes("xss") ||
               alert.rule.description.toLowerCase().includes("insecure deserialization") ||
               alert.rule.description.toLowerCase().includes("vulnerable components") ||
-              alert.rule.description.toLowerCase().includes("logging")
+              alert.rule.description.toLowerCase().includes("logging") ||
+              // Detecting OWASP-related CWEs
+              alert.cwe?.id === "CWE-918" || // SSRF
+              alert.cwe?.id === "CWE-79" ||  // XSS
+              alert.cwe?.id === "CWE-89"     // SQL Injection
             );
 
             if (owaspRelatedAlerts.length === 0) {
@@ -39,7 +43,15 @@ jobs:
             } else {
               console.log(`${owaspRelatedAlerts.length} OWASP-related alerts found.`);
               owaspRelatedAlerts.forEach(alert => {
-                console.log(`Alert: ${alert.rule.description} (Severity: ${alert.rule.security_severity_level})`);
+                console.log(`Annotating Alert: ${alert.rule.description} (Severity: ${alert.rule.security_severity_level})`);
+
+                // Add annotations to the alert
+                github.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: alert.number,
+                  body: `This alert is related to OWASP Top 10: ${alert.rule.description}`
+                });
               });
             }
 
