@@ -9,6 +9,11 @@ jobs:
   detect-owasp:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Check out the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Fetch code scanning alerts
       - name: Fetch code scanning alerts
         id: fetch_alerts
         uses: actions/github-script@v6
@@ -43,8 +48,12 @@ jobs:
               const fs = require('fs');
               fs.writeFileSync('owasp-alerts-report.md', report);
             }
-      - name: Commit report
+
+      # Step 3: Commit the generated report back to the repository
+      - name: Commit OWASP Alerts Report
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "Add OWASP Alerts Report"
           file_pattern: owasp-alerts-report.md
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
