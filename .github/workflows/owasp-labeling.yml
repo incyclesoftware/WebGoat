@@ -1,0 +1,32 @@
+name: "Automate OWASP Labeling"
+
+on:
+  # Trigger the workflow when a new code scanning alert is created or reopened
+  code_scanning_alert:
+    types: [created, reopened]
+
+jobs:
+  label-owasp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Code Scanning Alerts
+        id: fetch_alerts
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const alerts = await github.codeScanning.listAlertsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            // Filter alerts to find those related to OWASP
+            const owasp_alerts = alerts.data.filter(alert => 
+              alert.rule.description.toLowerCase().includes('owasp'));
+            return owasp_alerts;
+
+      - name: Label OWASP Alerts
+        if: steps.fetch_alerts.outputs != '[]'
+        run: |
+          for alert in ${{ steps.fetch_alerts.outputs }}
+          do
+            gh issue edit $alert --add-label "OWASP Top 10"
+          done
