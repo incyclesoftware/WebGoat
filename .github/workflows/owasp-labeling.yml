@@ -1,32 +1,32 @@
-name: "Automate OWASP Labeling"
+name: "Retrospective OWASP Labeling"
 
 on:
-  # Trigger the workflow when a new code scanning alert is created or reopened
-  code_scanning_alert:
-    types: [created, reopened]
+  workflow_dispatch:  # Allows manual triggering of this workflow
 
 jobs:
   label-owasp:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch Code Scanning Alerts
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Fetch existing code scanning alerts
         id: fetch_alerts
         uses: actions/github-script@v6
         with:
           script: |
-            const alerts = await github.codeScanning.listAlertsForRepo({
+            const alerts = await github.request('GET /repos/{owner}/{repo}/code-scanning/alerts', {
               owner: context.repo.owner,
               repo: context.repo.repo,
+              per_page: 100  // You can increase this value based on your repo size
             });
-            // Filter alerts to find those related to OWASP
-            const owasp_alerts = alerts.data.filter(alert => 
-              alert.rule.description.toLowerCase().includes('owasp'));
-            return owasp_alerts;
+            return alerts.data;
 
       - name: Label OWASP Alerts
-        if: steps.fetch_alerts.outputs != '[]'
+        if: ${{ steps.fetch_alerts.outputs != '[]' }}
         run: |
-          for alert in ${{ steps.fetch_alerts.outputs }}
-          do
-            gh issue edit $alert --add-label "OWASP Top 10"
+          for alert in ${{ steps.fetch_alerts.outputs }}; do
+            if [[ $alert.rule.description == *"OWASP"* ]]; then
+              gh issue edit $alert --add-label "OWASP Top 10"
+            fi
           done
