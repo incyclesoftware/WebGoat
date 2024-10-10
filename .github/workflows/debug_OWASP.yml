@@ -2,11 +2,9 @@ name: "Debug OWASP Detection"
 
 on:
   workflow_dispatch:  # Allows manual triggering
-  schedule:
-    - cron: "0 0 * * *"  # Run daily, adjust based on your needs
 
 jobs:
-  detect-and-log-alerts:
+  log-alerts:
     runs-on: ubuntu-latest
     steps:
       - name: Fetch code scanning alerts
@@ -17,15 +15,12 @@ jobs:
             const alerts = await github.request('GET /repos/{owner}/{repo}/code-scanning/alerts', {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              per_page: 100
+              per_page: 100  // Fetch up to 100 alerts per page
             });
 
-            // Log each alert's data for debugging
+            // Log the full alert data for each alert
             alerts.data.forEach(alert => {
-              console.log(`Alert ID: ${alert.id}`);
-              console.log(`Rule Description: ${alert.rule.description}`);
-              console.log(`CWE ID: ${alert.cwe?.id}`);
-              console.log(`Full Alert Data:`, alert);
+              console.log("Full Alert Data:", JSON.stringify(alert, null, 2));
             });
 
             return alerts.data;
