@@ -1,4 +1,4 @@
-name: "Generate OWASP Alerts Report"
+name: "Generate OWASP Alerts Report with Severity"
 
 on:
   workflow_dispatch:  # Allows manual triggering
@@ -41,7 +41,8 @@ jobs:
             } else {
               let report = `# OWASP Alerts Report\n\n`;
               owaspRelatedAlerts.forEach(alert => {
-                report += `- **Alert:** ${alert.rule.description}\n  **File:** ${alert.most_recent_instance.location.path}\n  **Line:** ${alert.most_recent_instance.location.start_line}\n\n`;
+                let severity = alert.rule.security_severity_level || "Unknown";
+                report += `- **Alert:** ${alert.rule.description}\n  **File:** ${alert.most_recent_instance.location.path}\n  **Line:** ${alert.most_recent_instance.location.start_line}\n  **Severity:** ${severity}\n\n`;
               });
 
               // Save the report to a Markdown file
@@ -53,7 +54,7 @@ jobs:
       - name: Commit OWASP Alerts Report
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "Add OWASP Alerts Report"
+          commit_message: "Add OWASP Alerts Report with Severity"
           file_pattern: owasp-alerts-report.md
           commit_user_name: github-actions[bot]
           commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
