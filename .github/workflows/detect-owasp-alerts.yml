@@ -1,0 +1,34 @@
+name: "Detect and Annotate OWASP Alerts"
+
+on:
+  workflow_dispatch:  # Allows you to manually trigger the workflow
+  schedule:
+    - cron: "0 0 * * *"  # Run daily
+
+jobs:
+  detect-owasp:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch code scanning alerts
+        id: fetch_alerts
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const alerts = await github.codeScanning.listAlertsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            return alerts.data;
+
+      - name: Detect OWASP-related Alerts
+        id: detect_owasp
+        run: |
+          for alert in ${{ steps.fetch_alerts.outputs }}; do
+            description="${{ alert.rule.description }}"
+            case "${description,,}" in
+              *"injection"*|*"broken authentication"*|*"data exposure"*|*"xxe"*|*"access control"*|*"misconfiguration"*|*"xss"*|*"insecure deserialization"*|*"vulnerable components"*|*"logging"*)
+                echo "OWASP-related alert found: $description"
+              ;;
+            esac
+          done
