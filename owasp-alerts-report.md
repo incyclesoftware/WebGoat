@@ -1,5 +1,10 @@
 # OWASP Alerts Report
 
+- **Alert:** Uncontrolled data used in path expression
+  **File:** src/main/java/org/owasp/webgoat/lessons/pathtraversal/ProfileZipSlip.java
+  **Line:** 75
+  **Severity:** high
+
 - **Alert:** Polynomial regular expression used on uncontrolled data
   **File:** src/main/java/org/owasp/webgoat/lessons/xss/CrossSiteScriptingLesson5a.java
   **Line:** 85
@@ -368,10 +373,5 @@
 - **Alert:** Uncontrolled data used in path expression
   **File:** webgoat-lessons/path-traversal/src/main/java/org/owasp/webgoat/path_traversal/ProfileUploadRetrieval.java
   **Line:** 93
-  **Severity:** high
-
-- **Alert:** Uncontrolled data used in path expression
-  **File:** webgoat-lessons/path-traversal/src/main/java/org/owasp/webgoat/path_traversal/ProfileUploadRetrieval.java
-  **Line:** 91
   **Severity:** high
 
